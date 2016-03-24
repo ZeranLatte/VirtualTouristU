@@ -36,7 +36,7 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate, Pi
         longPress.minimumPressDuration = 1.0
         mapView.addGestureRecognizer(longPress)
         
-        
+        //MARK: - Bugs: Fail to show any map annotation in a mapView from core data.
         let result = self.fetchedResultsController.fetchedObjects as! [MKAnnotation]
         print("Pin count: \(result.count)")
         self.mapView.addAnnotations(result)
@@ -45,9 +45,7 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate, Pi
     
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
-//        let result = self.fetchedResultsController.fetchedObjects as! [MKAnnotation]
-//        print("Pin count: \(result.count)")
-//        self.mapView.addAnnotations(result)
+
         print("MapView annotation count: \(self.mapView.annotations.count)")
     }
     
@@ -76,9 +74,6 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate, Pi
         }
         
         //set delegate for mapView
-        //mapViewDelegate = (mapView: mapView, coreDataContext: sharedContext)
-        //pinPickDelegate
-        
         mapViewDelegate = MapViewDelegate(delegate: self)
         self.mapView.delegate = mapViewDelegate
     }
@@ -102,11 +97,10 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate, Pi
         ]
         
         print("Long press to add a new pin")
-        // Core Date init to persist pin object
-        //let _ = Pin(latitude: newCoord.latitude, longitude: newCoord.longitude, context: sharedContext)
-        //CoreDataStackManager.sharedInstance().saveContext()
         
-
+        // Core Date init to persist pin object
+        let _ = Pin(latitude: newCoord.latitude, longitude: newCoord.longitude, context: sharedContext)
+        CoreDataStackManager.sharedInstance().saveContext()
         
         let newAnotation = MKPointAnnotation()
         newAnotation.coordinate = newCoord
@@ -145,7 +139,7 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate, Pi
             
         case .Insert:
             print("Calling mapView to insert a new pin")
-            //self.mapViewDelegate?.InsertPin(anObject as! Pin)
+            self.mapViewDelegate?.InsertPin(anObject as! Pin)
 
         case .Delete:
             print("Calling mapView to remove a pin")

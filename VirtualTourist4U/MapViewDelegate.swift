@@ -22,7 +22,6 @@ class MapViewDelegate: NSObject, MKMapViewDelegate {
     
     
     init(delegate: PinPickerDelegate ) {
-        //self.mapView = mapView
         self.pinPickDelegate = delegate
     }
     
@@ -54,14 +53,12 @@ class MapViewDelegate: NSObject, MKMapViewDelegate {
         print("Map view delegate: did select annotationView")
         print("Alert the delegate which is Location VC  ---")
         pinPickDelegate?.pinTappedAction(self, pin: view.description)
-        
     }
     
     
     
     func InsertPin(pin: Pin) {
         print("MapView Delegate: inserting a pin")
-        //mapView.addAnnotation(pin)
     }
     
     
