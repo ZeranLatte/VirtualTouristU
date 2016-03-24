@@ -11,10 +11,9 @@ import SnapKit
 import MapKit
 import CoreData
 
-class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate, PinPickerDelegate {
+class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
     
     var mapView: MKMapView!
-    var mapViewDelegate: MapViewDelegate?
     var newPin: Pin!
     
     override func viewDidLoad() {
@@ -49,16 +48,6 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate, Pi
         print("MapView annotation count: \(self.mapView.annotations.count)")
     }
     
-    
-    
-    // MARK: - callback method from PinPickerDelegate
-    func pinTappedAction(picker: MapViewDelegate, pin: String) {
-        print("Location View Controller: pin tapped -- \(pin)")
-        let controller = self.storyboard!.instantiateViewControllerWithIdentifier("PhotoAlbumVC") as! PhotoAlbumVC
-        self.navigationController?.pushViewController(controller, animated: true)
-        
-        
-    }
 
     
     func loadMapView() {
@@ -74,8 +63,7 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate, Pi
         }
         
         //set delegate for mapView
-        mapViewDelegate = MapViewDelegate(delegate: self)
-        self.mapView.delegate = mapViewDelegate
+        self.mapView.delegate = self
     }
     
     func centerMapLocation(location: CLLocation) {
@@ -100,7 +88,7 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate, Pi
         
         // Core Date init to persist pin object
         let _ = Pin(latitude: newCoord.latitude, longitude: newCoord.longitude, context: sharedContext)
-        CoreDataStackManager.sharedInstance().saveContext()
+        //CoreDataStackManager.sharedInstance().saveContext()
         
         let newAnotation = MKPointAnnotation()
         newAnotation.coordinate = newCoord
@@ -139,7 +127,6 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate, Pi
             
         case .Insert:
             print("Calling mapView to insert a new pin")
-            self.mapViewDelegate?.InsertPin(anObject as! Pin)
 
         case .Delete:
             print("Calling mapView to remove a pin")
@@ -151,5 +138,40 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate, Pi
    
 
 
+}
+
+extension TravelLocationVC: MKMapViewDelegate {
+    
+    func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
+        //        let identifier = "pin"
+        //        var view: MKPinAnnotationView
+        //        if let dequeuedView = mapView.dequeueReusableAnnotationViewWithIdentifier(identifier) as? MKPinAnnotationView {
+        //            dequeuedView.annotation = annotation
+        //            view = dequeuedView
+        //        } else {
+        //            view = MKPinAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+        //            view.canShowCallout = true
+        //            view.calloutOffset = CGPoint(x: -5, y: 5)
+        //            view.rightCalloutAccessoryView = UIButton(type: .DetailDisclosure) as UIView
+        //
+        //        }
+        //        view.backgroundColor = UIColor(red: 0.85, green: 0.79, blue: 0.71, alpha: 1)
+        //        return view
+        let annotationView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "pin")
+        annotationView.canShowCallout = false
+        
+        return annotationView
+        
+    }
+    
+    // MARK: TODO
+    // when a pin is tapped, go to photo album scene.
+    func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
+        print("Location View Controller: pin tapped -- \(view.annotation?.coordinate)")
+        let controller = self.storyboard!.instantiateViewControllerWithIdentifier("PhotoAlbumVC") as! PhotoAlbumVC
+        self.navigationController?.pushViewController(controller, animated: true)
+    }
+
+    
 }
 

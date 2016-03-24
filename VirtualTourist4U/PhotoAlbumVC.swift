@@ -9,7 +9,7 @@
 import UIKit
 import MapKit
 
-class PhotoAlbumVC: UIViewController {
+class PhotoAlbumVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate {
     
     var mapView: MKMapView!
     var collectionView: UICollectionView!
@@ -29,6 +29,8 @@ class PhotoAlbumVC: UIViewController {
             make.top.equalTo(self.view).offset(0)
         }
 
+        initCollectionView()
+        
         newButton = createButton()
         self.view.addSubview(newButton)
         newButton.snp_makeConstraints { (make) -> Void in
@@ -37,9 +39,35 @@ class PhotoAlbumVC: UIViewController {
             make.bottom.equalTo(self.view).offset(0)
             make.height.equalTo(50)
         }
+        
     }
 
-    
+    func initCollectionView() {
+        
+        let width = self.view.frame.width
+        let height = self.view.frame.height
+        let cellWidth = (width-18)/3
+        let cellSize = CGSize(width: cellWidth, height: cellWidth)
+        
+        let layout: UICollectionViewFlowLayout = UICollectionViewFlowLayout()
+        layout.itemSize = cellSize
+        layout.minimumInteritemSpacing = 6
+        layout.minimumLineSpacing = 10
+        let frame = CGRect(x: 0, y: 0, width: 0, height: 0)
+        collectionView = UICollectionView(frame: frame, collectionViewLayout: layout)
+        collectionView.registerClass(PhotoAlbumCellCollectionViewCell.self, forCellWithReuseIdentifier: "PhotoCell")
+        collectionView.backgroundColor = UIColor.lightGrayColor()
+        self.view.addSubview(collectionView)
+        collectionView.dataSource = self
+        collectionView.delegate = self
+        collectionView.snp_makeConstraints { (make) -> Void in
+            make.width.equalTo(self.view)
+            make.bottom.equalTo(self.view)
+            make.centerX.equalTo(self.view)
+            make.height.equalTo(height * 0.6)
+        }
+
+    }
     
     func createButton() -> UIButton {
         let button = UIButton()
@@ -58,15 +86,14 @@ class PhotoAlbumVC: UIViewController {
         mapView.setRegion(coordinateRegion, animated: true)
     }
 
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
+    // MARK: - UICollectionView delegate and datasource
+    func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return 18
     }
-    */
-
+    
+    func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
+        let cell =  collectionView.dequeueReusableCellWithReuseIdentifier("PhotoCell", forIndexPath: indexPath) as! PhotoAlbumCellCollectionViewCell
+        cell.backgroundColor = UIColor.whiteColor()
+        return cell
+    }
 }
