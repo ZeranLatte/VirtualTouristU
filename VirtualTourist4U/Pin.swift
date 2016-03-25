@@ -16,8 +16,8 @@ class Pin: NSManagedObject, MKAnnotation {
     // MKAnnotation properties
     
     var coordinate: CLLocationCoordinate2D = CLLocationCoordinate2D()
-    var title: String? = ""
-
+    var title: String?
+    var id: String?
     
     struct Keys {
         static let Longitude = "longitude"
@@ -42,8 +42,7 @@ class Pin: NSManagedObject, MKAnnotation {
       
         
         coordinate = CLLocationCoordinate2DMake(latitude as CLLocationDegrees, longitude as CLLocationDegrees)
-        
-        
+        id = coordinate.longitude.description
     }
     
     

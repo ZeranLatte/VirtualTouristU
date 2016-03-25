@@ -16,12 +16,6 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
     var mapView: MKMapView!
     var newPin: Pin!
     
-    // File directory for last view map regiog/position
-    var file: String {
-        let manager = NSFileManager.defaultManager()
-        let url = manager.URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask).first! as NSURL
-        return url.URLByAppendingPathComponent("savedLocation").path!
-    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -41,25 +35,51 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
         let longPress = UILongPressGestureRecognizer(target: self, action: "actionToAddPin:")
         longPress.minimumPressDuration = 0.8
         mapView.addGestureRecognizer(longPress)
-        
+      
         //MARK: - Bugs: Fail to show any map annotation in a mapView from core data.
-        let result = self.fetchedResultsController.fetchedObjects as! [Pin]
-        for pin in result {
-            mapView.addAnnotation(pin)
-        }
-        
-        print("Pin count: \(result.count)")
+//        let pins = self.fetchedResultsController.fetchedObjects as! [Pin]
+//        print(pins[1])
+//        mapView.addAnnotations(pins)
+        prepMapState()
+        //print("Pin count: \(pins.count)")
         print("MapView annotation count: \(self.mapView.annotations.count)")
     }
     
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
-        let result = self.fetchedResultsController.fetchedObjects as! [MKAnnotation]
-        print("Pin count: \(result.count)")
+        print("View will appear")
 
+        let pins = self.fetchedResultsController.fetchedObjects as! [Pin]
+        mapView.addAnnotations(pins)
+        
+//        mapView.addAnnotations(fetchAllPins())
+//        print(fetchAllPins()[0].coordinate)
         print("MapView annotation count: \(self.mapView.annotations.count)")
+       
     }
     
+    func fetchAllPins() -> [Pin] {
+        
+        // Create the Fetch Request
+        let fetchRequest = NSFetchRequest(entityName: "Pin")
+        
+        // Execute the Fetch Request
+        do {
+            return try sharedContext.executeFetchRequest(fetchRequest) as! [Pin]
+        } catch _ {
+            return [Pin]()
+        }
+    }
+    
+    func fetchAndAddPins() {
+        let pins = fetchedResultsController.fetchedObjects
+        if let array = pins as? [Pin] {
+            for item in array {
+                let pin = item as Pin
+                mapView.addAnnotation(pin)
+            }
+        }
+    }
 
     
     func loadMapView() {
@@ -76,27 +96,10 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
         
         //set delegate for mapView
         self.mapView.delegate = self
+        
     }
     
-    func centerMapLocation(location: CLLocation) {
-        
-        let regionRadius: CLLocationDistance = 25000
-        let coordinateRegion = MKCoordinateRegionMakeWithDistance(location.coordinate, regionRadius*2.0, regionRadius*2.0)
-        mapView.setRegion(coordinateRegion, animated: true)
-    }
-    
-    func saveMapState() {
-        print("Saving map region/location")
-        let mapDictionary = [
-            "latitude" : mapView.region.center.latitude,
-            "longitude" : mapView.region.center.longitude,
-            "latitudeDelta" : mapView.region.span.latitudeDelta,
-            "longitudeDelta" : mapView.region.span.longitudeDelta
-        ]
-        
-        NSKeyedArchiver.archiveRootObject(mapDictionary, toFile: file)
-    }
-
+   
     func actionToAddPin(sender:UIGestureRecognizer) {
         print("Long press to add a new pin")
         if sender.state != UIGestureRecognizerState.Began {
@@ -108,38 +111,65 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
         case .Began:
             print("Press began")
             newPin = Pin(latitude: newCoord.latitude, longitude: newCoord.longitude, context: sharedContext)
+            print(newPin.coordinate)
         case .Ended:
-            CoreDataStackManager.sharedInstance().saveContext()
             print("Press ended")
         default:
             // do nothing
             break
         }
+        CoreDataStackManager.sharedInstance().saveContext()
 
         let pinDictionary = [
             "longitude": newCoord.longitude,
             "latidude": newCoord.latitude
         ]
-        
-        
-        // Core Date init to persist pin object
-//        let _ = Pin(latitude: newCoord.latitude, longitude: newCoord.longitude, context: sharedContext)
-        
-        let newAnotation = MKPointAnnotation()
-        newAnotation.coordinate = newCoord
-        newAnotation.title = "New Location"
-        newAnotation.subtitle = "New Subtitle"
-        mapView.addAnnotation(newAnotation)
+//        let newAnotation = MKPointAnnotation()
+//        newAnotation.coordinate = newCoord
+//        newAnotation.title = "New Location"
+//        newAnotation.subtitle = "New Subtitle"
         
     }
     
-    // MARK: - Core Data related functions and properties
+    // MARK: - Use NSCoder to save last viewd map state
+    // File directory for last view map regiog/position
+    var mapStateFilePath: String {
+        let manager = NSFileManager.defaultManager()
+        let url = manager.URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask).first! as NSURL
+        return url.URLByAppendingPathComponent("savedMapState").path!
+    }
+    
+    func prepMapState() {
+        if let mapStateDictionary = NSKeyedUnarchiver.unarchiveObjectWithFile(mapStateFilePath) as? [String: AnyObject] {
+            let lon = mapStateDictionary["longitude"] as! CLLocationDegrees
+            let lat = mapStateDictionary["latitude"] as! CLLocationDegrees
+            let lonDelta = mapStateDictionary["longitudeDelta"] as! CLLocationDegrees
+            let latDelta = mapStateDictionary["latitudeDelta"] as! CLLocationDegrees
+            let mapRegion = MKCoordinateRegion(center: CLLocationCoordinate2DMake(lat, lon), span: MKCoordinateSpanMake(latDelta, lonDelta))
+            mapView.setRegion(mapRegion, animated: true)
+        }
+    }
+    
+    func saveMapState() {
+        print("Saving map region/location")
+        let mapDictionary = [
+            "latitude" : mapView.region.center.latitude,
+            "longitude" : mapView.region.center.longitude,
+            "latitudeDelta" : mapView.region.span.latitudeDelta,
+            "longitudeDelta" : mapView.region.span.longitudeDelta
+        ]
+        
+        NSKeyedArchiver.archiveRootObject(mapDictionary, toFile: mapStateFilePath)
+    }
+
+    
+    // MARK: - Core Data properties
     
     lazy var fetchedResultsController: NSFetchedResultsController = {
         
         let request = NSFetchRequest(entityName: "Pin")
         
-        request.sortDescriptors = []
+        request.sortDescriptors = [NSSortDescriptor(key: "longitude", ascending: true)]
         
         let controller = NSFetchedResultsController(fetchRequest: request, managedObjectContext: self.sharedContext, sectionNameKeyPath: nil, cacheName: nil)
         return controller
@@ -152,7 +182,7 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
     }
     
     
-    // MARK: - NSFetchedResultsControllerDelegate methods
+    // MARK: - Core Data NSFetchedResultsControllerDelegate methods
     func controllerWillChangeContent(controller: NSFetchedResultsController) {
         print("NSFetchedResultsController will change method")
     }
@@ -162,6 +192,7 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
             
         case .Insert:
             print("Calling mapView to insert a new pin")
+            mapView.addAnnotation(newPin)
 
         case .Delete:
             print("Calling mapView to remove a pin")
@@ -170,34 +201,30 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
             return            
         }
     }
+    
+    
    
 
 
 }
 
-extension TravelLocationVC: MKMapViewDelegate{
+extension TravelLocationVC: MKMapViewDelegate {
     
     
     func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
         
         //Use a dequed annotation view if possible, otherwise create a new one
-        let identifier = "Pin"
-        var view: MKPinAnnotationView
-        
-        if let dequeuedAnnotatationView = mapView.dequeueReusableAnnotationViewWithIdentifier(identifier) as? MKPinAnnotationView {
-            
-            dequeuedAnnotatationView.annotation = annotation
-            view = dequeuedAnnotatationView
-            
+        let identifier = "pinViewID"
+        var pinView = mapView.dequeueReusableAnnotationViewWithIdentifier(identifier) as? MKPinAnnotationView
+        if pinView == nil {
+            pinView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+            pinView!.canShowCallout = false
+            pinView?.animatesDrop = true
         } else {
-            
-            view = MKPinAnnotationView(annotation: annotation, reuseIdentifier: identifier)
-            view.canShowCallout = false
-            view.animatesDrop = true
-            view.draggable = false
+            pinView?.annotation = annotation
         }
         
-        return view
+        return pinView
         
     }
     
@@ -207,6 +234,8 @@ extension TravelLocationVC: MKMapViewDelegate{
         print("Location View Controller: pin tapped -- \(view.annotation?.coordinate)")
         saveMapState()
         let controller = self.storyboard!.instantiateViewControllerWithIdentifier("PhotoAlbumVC") as! PhotoAlbumVC
+        controller.region = mapView.region
+        controller.pin = view.annotation as! Pin
         self.navigationController?.pushViewController(controller, animated: true)
     }
 

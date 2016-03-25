@@ -19,10 +19,7 @@ class PhotoAlbumCellCollectionViewCell: UICollectionViewCell {
     override init(frame: CGRect) {
         super.init(frame: frame)
         imageView = UIImageView(frame: frame)
-        //self.addSubview(imageView)
-        self.layer.borderColor = UIColor.yellowColor().CGColor
-        self.layer.borderWidth = 7
-        //imageView.backgroundColor = UIColor.orangeColor()
+        self.contentView.addSubview(imageView)
     }
     
 }

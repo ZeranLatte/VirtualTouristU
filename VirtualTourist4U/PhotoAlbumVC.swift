@@ -14,7 +14,8 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDataSource, UICollectionVi
     var mapView: MKMapView!
     var collectionView: UICollectionView!
     var newButton: UIButton!
-    var centerLocation: CLLocation!
+    var region:  MKCoordinateRegion!
+    var pin: Pin!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -22,6 +23,9 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDataSource, UICollectionVi
         let height = self.view.frame.height
         mapView = MKMapView()
         self.view.addSubview(mapView)
+        mapView.setRegion(region, animated: true)
+        mapView.centerCoordinate = pin.coordinate
+        mapView.addAnnotation(self.pin)
         mapView.snp_makeConstraints { (make) -> Void in
             make.width.equalTo(self.view)
             make.centerX.equalTo(self.view)
