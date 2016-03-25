@@ -26,7 +26,9 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
         // Core Data prepare
         do {
             try fetchedResultsController.performFetch()
-        } catch {}
+        } catch {
+            print(error)
+        }
         
         fetchedResultsController.delegate = self
         
@@ -37,11 +39,14 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
         mapView.addGestureRecognizer(longPress)
       
         //MARK: - Bugs: Fail to show any map annotation in a mapView from core data.
-//        let pins = self.fetchedResultsController.fetchedObjects as! [Pin]
-//        print(pins[1])
-//        mapView.addAnnotations(pins)
+        let pins = self.fetchedResultsController.fetchedObjects as! [Pin]
+        print(pins[1])
+        print(pins[1].coordinate)
+        print("\(pins[1].longitude) ++ \(pins[1].latitude)")
+        mapView.addAnnotations(pins)
+        
         prepMapState()
-        //print("Pin count: \(pins.count)")
+        print("Pin count: \(pins.count)")
         print("MapView annotation count: \(self.mapView.annotations.count)")
     }
     
@@ -49,8 +54,8 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
         super.viewWillAppear(animated)
         print("View will appear")
 
-        let pins = self.fetchedResultsController.fetchedObjects as! [Pin]
-        mapView.addAnnotations(pins)
+//        let pins = self.fetchedResultsController.fetchedObjects as! [Pin]
+//        mapView.addAnnotations(pins)
         
 //        mapView.addAnnotations(fetchAllPins())
 //        print(fetchAllPins()[0].coordinate)
@@ -107,23 +112,22 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
         }
         let touchPoint = sender.locationInView(self.mapView)
         let newCoord:CLLocationCoordinate2D = mapView.convertPoint(touchPoint, toCoordinateFromView: self.mapView)
-        switch sender.state {
-        case .Began:
-            print("Press began")
-            newPin = Pin(latitude: newCoord.latitude, longitude: newCoord.longitude, context: sharedContext)
-            print(newPin.coordinate)
-        case .Ended:
-            print("Press ended")
-        default:
-            // do nothing
-            break
-        }
-        CoreDataStackManager.sharedInstance().saveContext()
 
-        let pinDictionary = [
-            "longitude": newCoord.longitude,
-            "latidude": newCoord.latitude
-        ]
+//        switch sender.state {
+//        case .Began:
+//            print("Press began")
+//            newPin = Pin(latitude: newCoord.latitude, longitude: newCoord.longitude, context: sharedContext)
+//            print(newPin.coordinate)
+//        case .Ended:
+//            print("Press ended")
+//        default:
+//            // do nothing
+//            break
+//        }
+        newPin = Pin(latitude: newCoord.latitude, longitude: newCoord.longitude, context: sharedContext)
+
+        CoreDataStackManager.sharedInstance().saveContext()
+        
 //        let newAnotation = MKPointAnnotation()
 //        newAnotation.coordinate = newCoord
 //        newAnotation.title = "New Location"
@@ -169,7 +173,7 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
         
         let request = NSFetchRequest(entityName: "Pin")
         
-        request.sortDescriptors = [NSSortDescriptor(key: "longitude", ascending: true)]
+        request.sortDescriptors = []
         
         let controller = NSFetchedResultsController(fetchRequest: request, managedObjectContext: self.sharedContext, sectionNameKeyPath: nil, cacheName: nil)
         return controller
@@ -177,9 +181,9 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
     }()
     
     
-    var sharedContext: NSManagedObjectContext {
+    lazy var sharedContext: NSManagedObjectContext = {
         return CoreDataStackManager.sharedInstance().managedObjectContext
-    }
+    }()
     
     
     // MARK: - Core Data NSFetchedResultsControllerDelegate methods
