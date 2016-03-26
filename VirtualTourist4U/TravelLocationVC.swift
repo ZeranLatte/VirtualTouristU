@@ -15,12 +15,17 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
     
     var mapView: MKMapView!
     var newPin: Pin!
+    var editMode = false
+    var deleteLabel: UILabel!
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         print("Start Map view")
+        self.navigationItem.rightBarButtonItem = self.editButtonItem()
+        self.navigationItem.rightBarButtonItem?.target = self
+        self.navigationItem.rightBarButtonItem?.action = "editTapped:"
         
         
         // Core Data prepare
@@ -33,6 +38,7 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
         fetchedResultsController.delegate = self
         
         loadMapView()
+        addDeleteLabel()
         
         let longPress = UILongPressGestureRecognizer(target: self, action: "actionToAddPin:")
         longPress.minimumPressDuration = 0.8
@@ -76,17 +82,6 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
         }
     }
     
-    func fetchAndAddPins() {
-        let pins = fetchedResultsController.fetchedObjects
-        if let array = pins as? [Pin] {
-            for item in array {
-                let pin = item as Pin
-                mapView.addAnnotation(pin)
-            }
-        }
-    }
-
-    
     func loadMapView() {
         // init mapView and add
         mapView = MKMapView()
@@ -101,7 +96,22 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
         
         //set delegate for mapView
         self.mapView.delegate = self
-        
+    }
+    
+    func addDeleteLabel() {
+        deleteLabel = UILabel()
+        deleteLabel.hidden = true
+        self.view.addSubview(deleteLabel)
+        deleteLabel.text = "Tap a pin to delete"
+        deleteLabel.backgroundColor = UIColor(red: 0.9, green: 0.2, blue: 0.2, alpha: 1)
+        deleteLabel.textColor = UIColor.whiteColor()
+        deleteLabel.textAlignment = .Center
+        deleteLabel.snp_makeConstraints { (make) -> Void in
+            make.centerX.equalTo(self.view)
+            make.bottom.equalTo(self.view).offset(0)
+            make.width.equalTo(self.view)
+            make.height.equalTo(60)
+        }
     }
     
    
@@ -127,12 +137,6 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
         newPin = Pin(latitude: newCoord.latitude, longitude: newCoord.longitude, context: sharedContext)
 
         CoreDataStackManager.sharedInstance().saveContext()
-        
-//        let newAnotation = MKPointAnnotation()
-//        newAnotation.coordinate = newCoord
-//        newAnotation.title = "New Location"
-//        newAnotation.subtitle = "New Subtitle"
-        
     }
     
     // MARK: - Use NSCoder to save last viewd map state
@@ -206,12 +210,29 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
         }
     }
     
+    //MARK: - Control for deleting a pin on the map view
+    func editTapped(sender: UIBarButtonItem) {
+        
+        //toggle the edit flag
+        self.editMode = !editMode
+        deleteLabel.hidden = false
+        sender.title = "Done"
+        sender.action = "doneEdit:"
+    }
+    
+    func doneEdit(sender: UIBarButtonItem) {
+        self.editMode = !editMode
+        deleteLabel.hidden = true
+        sender.title = "Edit"
+        sender.action = "editTapped:"
+    }
     
    
 
 
 }
 
+// MARK: - Implementation of MKMapViewDelegate protocol method
 extension TravelLocationVC: MKMapViewDelegate {
     
     
@@ -235,13 +256,33 @@ extension TravelLocationVC: MKMapViewDelegate {
     // MARK: TODO
     // when a pin is tapped, go to photo album scene.
     func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
-        print("Location View Controller: pin tapped -- \(view.annotation?.coordinate)")
-        saveMapState()
-        let controller = self.storyboard!.instantiateViewControllerWithIdentifier("PhotoAlbumVC") as! PhotoAlbumVC
-        controller.region = mapView.region
-        controller.pin = view.annotation as! Pin
-        self.navigationController?.pushViewController(controller, animated: true)
+        
+        // Tap to delete this pin in editing mode
+        if editMode {
+            let pin = view.annotation as! Pin
+            // MARK: BUG - May need to use asynchronys dispatch
+            sharedContext.deleteObject(pin)
+            CoreDataStackManager.sharedInstance().saveContext()
+            print(pin)
+            
+        } else {
+            
+            // Tap to see photos in non-editing mode
+            print("Location View Controller: pin tapped to add new -- \(view.annotation?.coordinate)")
+            saveMapState()
+            let controller = self.storyboard!.instantiateViewControllerWithIdentifier("PhotoAlbumVC") as! PhotoAlbumVC
+            controller.region = mapView.region
+            controller.pin = view.annotation as! Pin
+            self.navigationController?.pushViewController(controller, animated: true)
+        }
+        
+        
+        
+        
+        
     }
+    
+    
 
     
 }

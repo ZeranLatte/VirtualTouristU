@@ -8,6 +8,7 @@
 
 import UIKit
 import MapKit
+import CoreData
 
 class PhotoAlbumVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate {
     
@@ -19,6 +20,12 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDataSource, UICollectionVi
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        //MARK: - Core data fetch
+        do {
+            try self.fetchedResultsController.performFetch()
+        } catch {}
+        fetchedResultsController.delegate = self
         
         let height = self.view.frame.height
         mapView = MKMapView()
@@ -44,6 +51,10 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDataSource, UICollectionVi
             make.height.equalTo(50)
         }
         
+    }
+    
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(animated)
     }
 
     func initCollectionView() {
@@ -100,4 +111,47 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDataSource, UICollectionVi
         cell.backgroundColor = UIColor.whiteColor()
         return cell
     }
+    
+    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+        //
+    }
+    
+    func collectionView(collectionView: UICollectionView, didDeselectItemAtIndexPath indexPath: NSIndexPath) {
+        //
+    }
+    
+    
+    
+    // MARK: - Core Data properties
+    
+    lazy var fetchedResultsController: NSFetchedResultsController = {
+        
+        let request = NSFetchRequest(entityName: "Pin")
+        
+        request.sortDescriptors = []
+        
+        let controller = NSFetchedResultsController(fetchRequest: request, managedObjectContext: self.sharedContext, sectionNameKeyPath: nil, cacheName: nil)
+        return controller
+        
+    }()
+    
+    lazy var sharedContext: NSManagedObjectContext = {
+        return CoreDataStackManager.sharedInstance().managedObjectContext
+    }()
 }
+
+
+extension PhotoAlbumVC: NSFetchedResultsControllerDelegate {
+    
+    // MARK: - Core Data properties
+    
+    
+    
+    
+}
+
+
+
+
+
+
