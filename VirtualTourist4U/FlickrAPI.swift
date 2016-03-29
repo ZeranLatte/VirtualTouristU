@@ -23,20 +23,24 @@ class FlickrAPI: NSObject {
         super.init()
     }
     
+    // MARK: - Shared Instance
+    class func sharedInstance() -> FlickrAPI {
+        
+        struct Singleton {
+            static var sharedInstance = FlickrAPI()
+        }
+        
+        return Singleton.sharedInstance
+    }
+    
+
+    
     // MARK: - GET
     
     // Return a number of random Picture objects from Flickr matching the lat and long coordinates - number to return specified in constant NUM_PHOTOS up to the max number returned
-    func getPicturesFromFlickrBySearch(pin: Pin, completionHandler: (result: [[String: String]]?, error: NSError?) -> Void)  {
+    func getPicturesFromPin(pin: Pin, completionHandler: (result: [[String: String]]?, error: NSError?) -> Void)  {
         
-        var randomPage : Int = 1
-        
-//        print("Number of pages is \(pin.numPhotoPages)")
-//        
-//        if let pageNumber = pin.numPhotoPages as? Int {
-//            randomPage = Int((arc4random_uniform(UInt32(pageNumber)))) + 1
-//        }
-        
-        print("Select from page number: \(randomPage)")
+        let randomPageNum = Int(arc4random_uniform(100_000))
         
         let methodArguments: [String: AnyObject]  = [
             "method" : FlickrAPI.Methods.photoSearchMethod,
@@ -47,7 +51,7 @@ class FlickrAPI: NSObject {
             "format" : FlickrAPI.Constants.DATA_FORMAT,
             "nojsoncallback" : FlickrAPI.Constants.NO_JSON_CALLBACK,
             "per_page" : FlickrAPI.Constants.PHOTOS_PER_PAGE,
-            "page" : randomPage,
+            "page" : randomPageNum,
             "lat" : pin.coordinate.latitude,
             "lon" : pin.coordinate.longitude,
             "bbox" : createBoundingBoxString(pin.coordinate.latitude, long: pin.coordinate.longitude)
@@ -98,38 +102,28 @@ class FlickrAPI: NSObject {
                 return
             }
             
-            /* GUARD: Did Flickr return an error? */
+            print(parsedResult)
+            
+            // GUARD: Did Flickr return an error?
             guard let stat = parsedResult["stat"] as? String where stat == "ok" else {
                 print("Flickr API returned an error. See error code and message in \(parsedResult)")
                 completionHandler(result: nil, error: nil)
                 return
             }
             
-            /* GUARD: Is "photos" key in our result? */
+            // GUARD: Is "photos" key in our result?
             guard let resultsDictionary = parsedResult["photos"] as? NSDictionary else {
                 print("Cannot find keys 'photos' in \(parsedResult)")
                 completionHandler(result: nil, error: nil)
                 return
             }
             
-            /* GUARD: Store the number of returned pages */
-            guard let numberOfPages = resultsDictionary["pages"] as? NSNumber else {
-                print("Cannot find key 'pages' in \(parsedResult)")
-                completionHandler(result: nil, error: nil)
-                return
-            }
-            
-            /* GUARD: Is "photo" key in the photosDictionary? */
+            // GUARD: Is "photo" key in the photosDictionary?
             guard let photosDictionary = resultsDictionary["photo"] as? [[String: AnyObject]] else {
                 print("Cannot find key 'photo' in \(resultsDictionary)")
                 completionHandler(result: nil, error: nil)
                 return
             }
-            
-            //Store the number of pages of results in the Pin object
-//            dispatch_async(dispatch_get_main_queue(), { () -> Void in
-//                pin.numPhotoPages = numberOfPages
-//            })
             
             // Pick random images from the results
             let totalReturnedImages = photosDictionary.count
@@ -140,8 +134,8 @@ class FlickrAPI: NSObject {
             var returnArray = [[String : String]]()
             
             for index in imageIndexArray {
-                let urlString = photosDictionary[index]["url_m"] as! String
-                let dictionary = ["url_m":urlString]
+                let urlString = photosDictionary[index]["url_q"] as! String
+                let dictionary = ["url_q":urlString]
                 returnArray.append(dictionary)
             }
             
@@ -153,29 +147,23 @@ class FlickrAPI: NSObject {
     }
     
     //This function returns a task to download photo data given the photo's Flickr URL
-    func taskForPhoto (photoURL: String, completionHandler: (imageData: NSData?, error: NSError?) ->  Void) -> NSURLSessionTask {
+    func imgFromURL (imgUrlStr: String, completionHandler: (imageData: NSData?, error: NSError?) ->  Void) -> NSURLSessionDataTask {
         
-        let url = NSURL(string: photoURL)
-        let request = NSURLRequest(URL: url!)
+        let imgUrl = NSURL(string: imgUrlStr)!
+        let request = NSURLRequest(URL: imgUrl)
         
         let task = session.dataTaskWithRequest(request) { (data, response, error) -> Void in
             
             if let _ = error {
-                completionHandler(imageData: nil, error: NSError(domain: "taskForPhoto", code: 0, userInfo: [NSLocalizedDescriptionKey : "error with photo download request"]))
+                completionHandler(imageData: nil, error: NSError(domain: "imgFromURL", code: 0, userInfo: [NSLocalizedDescriptionKey : "error with photo download request"]))
             } else {
                 completionHandler(imageData: data, error: nil)
             }
-            
-            
         }
         
         task.resume()
-        
         return task
-        
     }
-    
-    
     
     // MARK: - Helper functions
     
@@ -238,17 +226,6 @@ class FlickrAPI: NSObject {
     }
     
     
-    
-    // MARK: - Shared Instance
-    
-    class func sharedInstance() -> FlickrAPI {
-        
-        struct Singleton {
-            static var sharedInstance = FlickrAPI()
-        }
-        
-        return Singleton.sharedInstance
-    }
     
     
 }

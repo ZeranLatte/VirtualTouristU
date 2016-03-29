@@ -18,6 +18,8 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
     var editMode = false
     var deleteLabel: UILabel!
     
+
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -46,9 +48,9 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
       
         //MARK: - Bugs: Fail to show any map annotation in a mapView from core data.
         let pins = self.fetchedResultsController.fetchedObjects as! [Pin]
-        print(pins[1])
-        print(pins[1].coordinate)
-        print("\(pins[1].longitude) ++ \(pins[1].latitude)")
+//        print(pins[1])
+//        print(pins[1].coordinate)
+//        print("\(pins[1].longitude) ++ \(pins[1].latitude)")
         mapView.addAnnotations(pins)
         
         prepMapState()
@@ -261,6 +263,7 @@ extension TravelLocationVC: MKMapViewDelegate {
         if editMode {
             let pin = view.annotation as! Pin
             // MARK: BUG - May need to use asynchronys dispatch
+            mapView.removeAnnotation(view.annotation!)
             sharedContext.deleteObject(pin)
             CoreDataStackManager.sharedInstance().saveContext()
             print(pin)
@@ -273,6 +276,7 @@ extension TravelLocationVC: MKMapViewDelegate {
             let controller = self.storyboard!.instantiateViewControllerWithIdentifier("PhotoAlbumVC") as! PhotoAlbumVC
             controller.region = mapView.region
             controller.pin = view.annotation as! Pin
+            print(view.annotation)
             self.navigationController?.pushViewController(controller, animated: true)
         }
         

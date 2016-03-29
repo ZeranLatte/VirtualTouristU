@@ -15,6 +15,7 @@ class Photo: NSManagedObject {
 // Insert code here to add functionality to your managed object subclass
     @NSManaged var pin: Pin?
     @NSManaged var imgPath: String?
+    @NSManaged var imgUrl: String?
     
     
     override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
@@ -22,12 +23,15 @@ class Photo: NSManagedObject {
     }
     
     
-    init(imagePath: String, insertIntoManagedObjectContext context: NSManagedObjectContext) {
-        let entity = NSEntityDescription.entityForName("Picture", inManagedObjectContext: context)!
+    init(imageUrlStr: String, insertIntoManagedObjectContext context: NSManagedObjectContext) {
+        let entity = NSEntityDescription.entityForName("Photo", inManagedObjectContext: context)!
         
         super.init(entity: entity, insertIntoManagedObjectContext: context)
-        
-        imgPath = imagePath
+        imgUrl = imageUrlStr
+        let url = NSURL(string: imageUrlStr)!
+        if let path = url.lastPathComponent {
+            imgPath = "/\(path)"
+        }
     }
     
     var image: UIImage? {

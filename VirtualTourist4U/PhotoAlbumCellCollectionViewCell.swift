@@ -18,8 +18,20 @@ class PhotoAlbumCellCollectionViewCell: UICollectionViewCell {
         
     override init(frame: CGRect) {
         super.init(frame: frame)
-        imageView = UIImageView(frame: frame)
-        self.contentView.addSubview(imageView)
+        imageView = UIImageView(frame: CGRectZero)
+        self.addSubview(imageView)
+        imageView.frame = bounds
+       
+    }
+    
+    
+    var taskToCancelifCellIsReused: NSURLSessionTask? {
+        
+        didSet {
+            if let taskToCancel = oldValue {
+                taskToCancel.cancel()
+            }
+        }
     }
     
 }

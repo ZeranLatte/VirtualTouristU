@@ -17,13 +17,13 @@ extension FlickrAPI {
         static let FlickrAPIKey : String = "ae86539142323875ee4c82a826c6340f"
         static let FlickrBaseURLSecure : String = "https://api.flickr.com/services/rest/"
         
-        static let EXTRAS = "url_m"
+        static let EXTRAS = "url_q"
         static let SAFE_SEARCH = "1"
         static let DATA_FORMAT = "json"
         static let NO_JSON_CALLBACK = "1"
         static let CONTENT_TYPE = "1"
-        static let NUM_PHOTOS = 21
-        static let PHOTOS_PER_PAGE = 500
+        static let NUM_PHOTOS = 18
+        static let PHOTOS_PER_PAGE = 18
         
         static let BOUNDING_BOX_HALF_WIDTH = 1.0
         static let BOUNDING_BOX_HALF_HEIGHT = 1.0
