@@ -38,9 +38,7 @@ class FlickrAPI: NSObject {
     // MARK: - GET
     
     // Return a number of random Picture objects from Flickr matching the lat and long coordinates - number to return specified in constant NUM_PHOTOS up to the max number returned
-    func getPicturesFromPin(pin: Pin, completionHandler: (result: [[String: String]]?, error: NSError?) -> Void)  {
-        
-        let randomPageNum = Int(arc4random_uniform(100_000))
+    func getPicturesFromPin(pin: Pin, pageNum: Int, completionHandler: (result: [[String: String]]?, error: NSError?) -> Void)  {
         
         let methodArguments: [String: AnyObject]  = [
             "method" : FlickrAPI.Methods.photoSearchMethod,
@@ -51,7 +49,7 @@ class FlickrAPI: NSObject {
             "format" : FlickrAPI.Constants.DATA_FORMAT,
             "nojsoncallback" : FlickrAPI.Constants.NO_JSON_CALLBACK,
             "per_page" : FlickrAPI.Constants.PHOTOS_PER_PAGE,
-            "page" : randomPageNum,
+            "page" : pageNum,
             "lat" : pin.coordinate.latitude,
             "lon" : pin.coordinate.longitude,
             "bbox" : createBoundingBoxString(pin.coordinate.latitude, long: pin.coordinate.longitude)
@@ -145,6 +143,7 @@ class FlickrAPI: NSObject {
         
         task.resume()
     }
+    
     
     //This function returns a task to download photo data given the photo's Flickr URL
     func imgFromURL (imgUrlStr: String, completionHandler: (imageData: NSData?, error: NSError?) ->  Void) -> NSURLSessionDataTask {

@@ -19,6 +19,8 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDataSource, UICollectionVi
     var pin: Pin!
     var deleteEnabled = false
     
+    private var pageNumber: Int!
+    
     
     private var selectedIndexes = [NSIndexPath]()
     private var insertedIndexPaths: [NSIndexPath]!
@@ -69,6 +71,7 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDataSource, UICollectionVi
         
         // if the pin's photo array is empty, try getting the photos
         if pin.pictures.isEmpty {
+            pageNumber = 0
             self.getFlickrPhotos()
         }
     }
@@ -119,8 +122,10 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDataSource, UICollectionVi
     }
     
     func getFlickrPhotos() {
-        
-        FlickrAPI.sharedInstance().getPicturesFromPin(pin) { (result, error) -> Void in
+        if pageNumber == 0 {
+            pageNumber = 1
+        }
+        FlickrAPI.sharedInstance().getPicturesFromPin(pin, pageNum: self.pageNumber) { (result, error) -> Void in
             if let error = error {
                 print("Getting pictures from pin, \(error)")
             } else {
@@ -131,19 +136,19 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDataSource, UICollectionVi
                         self.displayNoPicLabel()
                     })
                 } else {
+                    
                     // Parse the array of movies dictionaries
                     let _ = result!.map() { (dictionary: [String : String]) -> Photo in
+                        
                         let photo = Photo(imageUrlStr: dictionary["url_q"]!, insertIntoManagedObjectContext: self.sharedContext)
-                        
                         photo.pin = self.pin
-                        
                         return photo
+                        
                     }
-                    
                     // Update the table on the main thread
-                    dispatch_async(dispatch_get_main_queue()) {
+                    dispatch_async(dispatch_get_main_queue(), { () -> Void in
                         self.collectionView.reloadData()
-                    }
+                    })
                     self.saveContext()
                 }
             }
@@ -270,7 +275,8 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDataSource, UICollectionVi
             
         } else {
             // load new collection mode is on, perform load new photos action
-            getFlickrPhotos()
+            self.getFlickrPhotos()
+            self.pageNumber = pageNumber + 1
         }
     }
     

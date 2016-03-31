@@ -34,6 +34,25 @@ class Photo: NSManagedObject {
         }
     }
     
+    override func prepareForDeletion() {
+        
+        if let fileName = imgPath {
+            if let dirPath = NSSearchPathForDirectoriesInDomains(.DocumentDirectory, .UserDomainMask, true).first {
+                let pathArray = [dirPath, fileName]
+                print("pathArray: \(pathArray)")
+                let fileURL = NSURL.fileURLWithPathComponents(pathArray)!
+                do {
+                    
+                    try NSFileManager.defaultManager().removeItemAtURL(fileURL)
+                    
+                } catch {
+                    
+                }
+            }
+        }
+        
+    }
+    
     var image: UIImage? {
         
         get {
