@@ -19,7 +19,7 @@ class PhotoAlbumCellCollectionViewCell: UICollectionViewCell {
     override init(frame: CGRect) {
         super.init(frame: frame)
         imageView = UIImageView(frame: CGRectZero)
-        self.addSubview(imageView)
+        self.contentView.addSubview(imageView)
         imageView.frame = bounds
        
     }

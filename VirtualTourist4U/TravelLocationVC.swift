@@ -48,9 +48,7 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
       
         //MARK: - Bugs: Fail to show any map annotation in a mapView from core data.
         let pins = self.fetchedResultsController.fetchedObjects as! [Pin]
-//        print(pins[1])
-//        print(pins[1].coordinate)
-//        print("\(pins[1].longitude) ++ \(pins[1].latitude)")
+
         mapView.addAnnotations(pins)
         
         prepMapState()
@@ -128,17 +126,20 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
 //        switch sender.state {
 //        case .Began:
 //            print("Press began")
-//            newPin = Pin(latitude: newCoord.latitude, longitude: newCoord.longitude, context: sharedContext)
-//            print(newPin.coordinate)
+
 //        case .Ended:
 //            print("Press ended")
 //        default:
 //            // do nothing
 //            break
 //        }
-        newPin = Pin(latitude: newCoord.latitude, longitude: newCoord.longitude, context: sharedContext)
-
-        CoreDataStackManager.sharedInstance().saveContext()
+        
+        dispatch_async(dispatch_get_main_queue()) { () -> Void in
+            self.newPin = Pin(latitude: newCoord.latitude, longitude: newCoord.longitude, context: self.sharedContext)
+            
+            CoreDataStackManager.sharedInstance().saveContext()
+        }
+        
     }
     
     // MARK: - Use NSCoder to save last viewd map state
@@ -255,7 +256,6 @@ extension TravelLocationVC: MKMapViewDelegate {
         
     }
     
-    // MARK: TODO
     // when a pin is tapped, go to photo album scene.
     func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
         
@@ -263,10 +263,11 @@ extension TravelLocationVC: MKMapViewDelegate {
         if editMode {
             let pin = view.annotation as! Pin
             // MARK: BUG - May need to use asynchronys dispatch
-            mapView.removeAnnotation(view.annotation!)
-            sharedContext.deleteObject(pin)
-            CoreDataStackManager.sharedInstance().saveContext()
-            print(pin)
+            dispatch_async(dispatch_get_main_queue(), { () -> Void in
+                mapView.removeAnnotation(view.annotation!)
+                self.sharedContext.deleteObject(pin)
+                CoreDataStackManager.sharedInstance().saveContext()
+            })
             
         } else {
             
@@ -279,10 +280,6 @@ extension TravelLocationVC: MKMapViewDelegate {
             print(view.annotation)
             self.navigationController?.pushViewController(controller, animated: true)
         }
-        
-        
-        
-        
         
     }
     
