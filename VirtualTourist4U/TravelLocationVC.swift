@@ -51,13 +51,13 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
 
         mapView.addAnnotations(pins)
         
-        prepMapState()
         print("Pin count: \(pins.count)")
         print("MapView annotation count: \(self.mapView.annotations.count)")
     }
     
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
+        prepMapState()
         print("View will appear")
 
 //        let pins = self.fetchedResultsController.fetchedObjects as! [Pin]
@@ -67,6 +67,11 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
 //        print(fetchAllPins()[0].coordinate)
         print("MapView annotation count: \(self.mapView.annotations.count)")
        
+    }
+    
+    override func viewWillDisappear(animated: Bool) {
+        super.viewWillDisappear(animated)
+        saveMapState()
     }
     
     func fetchAllPins() -> [Pin] {
@@ -133,12 +138,23 @@ class TravelLocationVC: UIViewController, NSFetchedResultsControllerDelegate {
 //            // do nothing
 //            break
 //        }
+//        self.newPin = Pin(latitude: newCoord.latitude, longitude: newCoord.longitude, context: self.sharedContext)
+//        CoreDataStackManager.sharedInstance().saveContext()
+
+        // New change for core-data/concurrency
+        let privateMOC = NSManagedObjectContext(concurrencyType: .PrivateQueueConcurrencyType)
+        privateMOC.parentContext = sharedContext
         
-        dispatch_async(dispatch_get_main_queue()) { () -> Void in
-            self.newPin = Pin(latitude: newCoord.latitude, longitude: newCoord.longitude, context: self.sharedContext)
-            
-            CoreDataStackManager.sharedInstance().saveContext()
+        privateMOC.performBlock { () -> Void in
+            self.newPin = Pin(latitude: newCoord.latitude, longitude: newCoord.longitude, context: privateMOC)
+            do {
+                try privateMOC.save()
+            } catch {
+                fatalError("Failure to save context: \(error)")
+            }
         }
+        
+        
         
     }
     
@@ -273,7 +289,6 @@ extension TravelLocationVC: MKMapViewDelegate {
             
             // Tap to see photos in non-editing mode
             print("Location View Controller: pin tapped to add new -- \(view.annotation?.coordinate)")
-            saveMapState()
             let controller = self.storyboard!.instantiateViewControllerWithIdentifier("PhotoAlbumVC") as! PhotoAlbumVC
             controller.region = mapView.region
             controller.pin = view.annotation as! Pin

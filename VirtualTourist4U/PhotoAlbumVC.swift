@@ -137,20 +137,40 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDataSource, UICollectionVi
                     })
                 } else {
                     
+                    // New change for core-data/concurrency
+                    let privateMOC = NSManagedObjectContext(concurrencyType: .PrivateQueueConcurrencyType)
+                    privateMOC.parentContext = self.sharedContext
+                    
+                    privateMOC.performBlock { () -> Void in
+                        // Parse the array of movies dictionaries
+                        let _ = result!.map() { (dictionary: [String : String]) -> Photo in
+                            
+                            let photo = Photo(imageUrlStr: dictionary["url_q"]!, insertIntoManagedObjectContext: privateMOC)
+                            photo.pin = self.pin
+                            return photo
+                        }
+                        do {
+                            try privateMOC.save()
+                        } catch {
+                            fatalError("Failure to save context: \(error)")
+                        }
+                    }
+                    
+                    
                     
                     // Parse the array of movies dictionaries
-                    let _ = result!.map() { (dictionary: [String : String]) -> Photo in
-                        
-                        let photo = Photo(imageUrlStr: dictionary["url_q"]!, insertIntoManagedObjectContext: self.sharedContext)
-                        photo.pin = self.pin
-                        return photo
-                        
-                    }
-                    // Update the table on the main thread
-                    dispatch_async(dispatch_get_main_queue(), { () -> Void in
-                        self.collectionView.reloadData()
-                    })
-                    self.saveContext()
+//                    let _ = result!.map() { (dictionary: [String : String]) -> Photo in
+//                        
+//                        let photo = Photo(imageUrlStr: dictionary["url_q"]!, insertIntoManagedObjectContext: self.sharedContext)
+//                        photo.pin = self.pin
+//                        return photo
+//                        
+//                    }
+//                    // Update the table on the main thread
+//                    dispatch_async(dispatch_get_main_queue(), { () -> Void in
+//                        self.collectionView.reloadData()
+//                    })
+                    //self.saveContext()
                 }
             }
         }

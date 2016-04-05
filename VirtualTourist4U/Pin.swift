@@ -17,8 +17,24 @@ class Pin: NSManagedObject, MKAnnotation {
     
     var coordinate: CLLocationCoordinate2D {
         get {
-            let coordinate = CLLocationCoordinate2DMake(latitude as CLLocationDegrees, longitude as CLLocationDegrees)
+            
+//            let privateMOC = NSManagedObjectContext(concurrencyType: .PrivateQueueConcurrencyType)
+//            privateMOC.parentContext = CoreDataStackManager.sharedInstance().managedObjectContext
+//            
+//            privateMOC.performBlock { () -> Void in
+//                let coordinate = CLLocationCoordinate2DMake(self.latitude as CLLocationDegrees, self.longitude as CLLocationDegrees)
+////                do {
+////                    try privateMOC.save()
+////                } catch {
+////                    fatalError("Failure to save context: \(error)")
+////                }
+//
+//            }
+            let coordinate = CLLocationCoordinate2DMake(self.latitude as CLLocationDegrees, self.longitude as CLLocationDegrees)
+
             return coordinate
+
+        
         }
         set {
             latitude = newValue.latitude
