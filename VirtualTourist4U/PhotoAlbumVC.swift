@@ -249,9 +249,11 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDataSource, UICollectionVi
             
             cell.taskToCancelifCellIsReused = task
         }
-//        if !self.selectedIndexes.contains(indexPath) {
-//            cell.imageView.alpha = 1
-//        }
+        if self.selectedIndexes.contains(indexPath) {
+            cell.imageView.alpha = 0.5
+        } else {
+            cell.imageView.alpha = 1
+        }
     }
     
     // action handler
@@ -279,8 +281,14 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDataSource, UICollectionVi
             
         } else {
             // load new collection mode is on, perform load new photos action
+            
+            for photo in self.pin.pictures {
+                sharedContext.deleteObject(photo)
+            }
+            
             self.pageNumber = pageNumber! + 1
             self.getFlickrPhotos(pageNumber!)
+
         }
     }
     
